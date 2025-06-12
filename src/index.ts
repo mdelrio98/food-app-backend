@@ -8,6 +8,8 @@ import cartRoutes from './routes/cart.routes'; // Import cart routes
 import productRoutes from './routes/product.routes'; // Import product routes
 import orderRoutes from './routes/order.routes'; // Import order routes
 
+console.log(`[DEBUG] Initial process.env.PORT: ${process.env.PORT}`);
+
 // Load environment variables
 dotenv.config();
 
@@ -15,8 +17,9 @@ dotenv.config();
 connectDB();
 
 const app: Application = express();
-const PORT = process.env.PORT || 3001; // Default to 3001 if not specified
+const PORT = parseInt(process.env.PORT || '3001', 10); // Default to 3001, ensure it's a number
 const API_PREFIX = process.env.API_PREFIX || '/api/v1';
+const LISTEN_HOST = '0.0.0.0'; // Standard for allowing connections from any interface
 
 // Middlewares
 app.use(cors()); // Enable CORS - configure origins in production
@@ -50,9 +53,21 @@ app.use((err: Error, req: Request, res: Response, next: express.NextFunction) =>
   res.status(500).json({ message: 'Something went wrong!', error: err.message });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-  console.log(`API available at http://localhost:${PORT}${API_PREFIX}`);
+app.listen(PORT, LISTEN_HOST, () => {
+  console.log(`Server listening on host ${LISTEN_HOST} and port ${PORT}`);
+  console.log(`Using API prefix: ${API_PREFIX}`);
+  
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Server running in PRODUCTION mode.');
+    // In production, the application is typically accessed via a public URL through a reverse proxy or load balancer.
+    // These logs confirm the internal listening configuration.
+  } else {
+    console.log('Server running in DEVELOPMENT mode.');
+    // For local development, you can typically access the server via localhost:
+    const displayHost = LISTEN_HOST === '0.0.0.0' ? 'localhost' : LISTEN_HOST;
+    console.log(`  Development URL: http://${displayHost}:${PORT}`);
+    console.log(`  Development API URL: http://${displayHost}:${PORT}${API_PREFIX}`);
+  }
 });
 
 export default app;
