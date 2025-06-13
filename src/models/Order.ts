@@ -1,9 +1,9 @@
 import { Schema, model, Document, Types } from 'mongoose';
-import { IProduct } from '../types/product.types';
+import { IMeal } from '../types/meal.types';
 import { IUser } from '../types/user.types';
 
 export interface OrderItem {
-  product: Types.ObjectId | IProduct;
+  product: Types.ObjectId | IMeal;
   quantity: number;
   price: number;
 }

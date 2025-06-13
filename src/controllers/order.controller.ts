@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import { Types } from 'mongoose';
 import * as OrderService from '../services/order.service';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { handleAsync } from '../utils/handleAsync';
@@ -12,7 +13,7 @@ export const createOrderHandler = handleAsync(
       throw new AppError('Authentication error: User ID not found.', 401);
     }
 
-    const order = await OrderService.createOrder(userId, req.body);
+    const order = await OrderService.createOrder(new Types.ObjectId(userId), req.body);
 
     res.status(201).json({
       message: 'Order created successfully',

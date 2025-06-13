@@ -1,11 +1,12 @@
 import { Schema, model, Types } from 'mongoose';
 import { ICart, ICartItem } from '../types/cart.types';
+import { IMeal } from '../types/meal.types';
 
 const CartItemSchema = new Schema<ICartItem>(
   {
     product: {
       type: Schema.Types.ObjectId,
-      ref: 'Product',
+      ref: 'Meal',
       required: true,
     },
     quantity: {

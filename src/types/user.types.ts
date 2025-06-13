@@ -9,3 +9,14 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
+/**
+ * Represents the user object attached to an authenticated request.
+ * It is based on the Mongoose Document and excludes sensitive fields.
+ */
+export interface IAuthenticatedUser extends Document {
+  _id: string;
+  name: string;
+  email: string;
+  // Note: 'password' is intentionally excluded.
+}

@@ -1,79 +1,135 @@
-// DUMMY IMPLEMENTATION for testing without a database.
+import Cart from '../models/Cart';
+import Meal from '../models/Meal';
+import { Types } from 'mongoose';
+import { ICart } from '../types/cart.types'; // Assuming you have this type
 
-const DUMMY_MEALS = [
-  { id: 'm1', name: 'Sushi', description: 'Finest fish and veggies', price: 22.99 },
-  { id: 'm2', name: 'Schnitzel', description: 'A german specialty!', price: 16.50 },
-  { id: 'm3', name: 'Barbecue Burger', description: 'American, raw, meaty', price: 12.99 },
-  { id: 'm4', name: 'Green Bowl', description: 'Healthy...and green...', price: 18.99 },
-];
+/**
+ * Retrieves an existing cart for a user or creates a new one if it doesn't exist.
+ * Populates product details for items in the cart.
+ * @param userId - The ID of the user.
+ * @returns The user's cart.
+ */
+export const getOrCreateCart = async (userId: string): Promise<ICart | null> => {
+  let cart = await Cart.findOne({ user: new Types.ObjectId(userId) }).populate(
+    'items.product',
+    'name price description imageUrl' // Select fields to populate
+  );
 
-// In-memory cart for dummy implementation
-let dummyCart: any = {
-  user: 'MOCK_USER_ID', // Mock user ID
-  items: [],
-  totalAmount: 0,
+  if (!cart) {
+    cart = await Cart.create({ user: new Types.ObjectId(userId), items: [], totalAmount: 0 });
+    // No need to populate here as items array is empty
+  }
+  return cart;
 };
 
-const recalculateTotal = () => {
-  dummyCart.totalAmount = dummyCart.items.reduce(
-    (sum: number, item: any) => sum + item.price * item.quantity,
-    0
+/**
+ * Adds an item to the user's cart or updates its quantity if it already exists.
+ * @param userId - The ID of the user.
+ * @param productId - The ID of the product to add.
+ * @param quantity - The quantity of the product to add.
+ * @returns The updated user's cart.
+ */
+export const addItemToCart = async (
+  userId: string,
+  mealId: string,
+  quantity: number
+): Promise<ICart | null> => {
+  const product = await Meal.findById(mealId);
+  if (!product) {
+    throw new Error('Product not found');
+  }
+
+  let cart = await Cart.findOne({ user: new Types.ObjectId(userId) });
+
+  if (!cart) {
+    cart = new Cart({ user: new Types.ObjectId(userId), items: [], totalAmount: 0 });
+  }
+
+  const itemIndex = cart.items.findIndex(
+    (item) => item.product.toString() === mealId
+  );
+
+  if (itemIndex > -1) {
+    // Item already exists in cart, update quantity
+    cart.items[itemIndex].quantity += quantity;
+  } else {
+    // Item does not exist in cart, add new item
+    cart.items.push({
+      product: new Types.ObjectId(mealId),
+      quantity,
+      price: product.price, // Store price at the time of adding
+    });
+  }
+
+  await cart.save(); // Mongoose pre-save hook will calculate totalAmount
+  return Cart.findById(cart._id).populate(
+    'items.product',
+    'name price description imageUrl'
   );
 };
 
-export const getOrCreateCart = async (userId: string): Promise<any> => {
-  console.log('DUMMY_SERVICE: Returning in-memory cart.');
-  return dummyCart;
-};
-
-export const addItemToCart = async (
-  userId: string,
-  productId: string,
-  quantity: number
-): Promise<any> => {
-  console.log(`DUMMY_SERVICE: Adding item ${productId} to cart.`);
-  const product = DUMMY_MEALS.find((p) => p.id === productId);
-  if (!product) {
-    throw new Error('Product not found in dummy data');
-  }
-
-  const existingItem = dummyCart.items.find((item: any) => item.id === productId);
-
-  if (existingItem) {
-    existingItem.quantity += quantity;
-  } else {
-    dummyCart.items.push({ ...product, quantity });
-  }
-
-  recalculateTotal();
-  return dummyCart;
-};
-
+/**
+ * Removes one unit of an item from the cart, or the entire item if quantity becomes 0.
+ * @param userId - The ID of the user.
+ * @param productId - The ID of the product to remove.
+ * @returns The updated user's cart.
+ */
 export const removeItemFromCart = async (
   userId: string,
-  productId: string
-): Promise<any> => {
-  console.log(`DUMMY_SERVICE: Removing item ${productId} from cart.`);
-  const existingItemIndex = dummyCart.items.findIndex((item: any) => item.id === productId);
+  mealId: string
+): Promise<ICart | null> => {
+  const cart = await Cart.findOne({ user: new Types.ObjectId(userId) });
 
-  if (existingItemIndex === -1) {
-    throw new Error('Item not found in dummy cart');
+  if (!cart) {
+    throw new Error('Cart not found');
   }
 
-  const item = dummyCart.items[existingItemIndex];
-  if (item.quantity > 1) {
-    item.quantity -= 1;
+  const itemIndex = cart.items.findIndex(
+    (item) => item.product.toString() === mealId
+  );
+
+  if (itemIndex > -1) {
+    if (cart.items[itemIndex].quantity > 1) {
+      cart.items[itemIndex].quantity -= 1;
+    } else {
+      cart.items.splice(itemIndex, 1);
+    }
+    await cart.save();
+    return Cart.findById(cart._id).populate(
+      'items.product',
+      'name price description imageUrl'
+    );
   } else {
-    dummyCart.items.splice(existingItemIndex, 1);
+    // Item not in cart, return current cart or throw error
+    // For consistency, let's return the cart as is, or throw an error if preferred.
+    // throw new Error('Item not found in cart');
+    return Cart.findById(cart._id).populate(
+      'items.product',
+      'name price description imageUrl'
+    ); 
+  }
+};
+
+/**
+ * Clears all items from the user's cart.
+ * @param userId - The ID of the user.
+ * @returns The emptied user's cart.
+ */
+export const clearCart = async (userId: string): Promise<ICart | null> => {
+  const cart = await Cart.findOne({ user: new Types.ObjectId(userId) });
+
+  if (!cart) {
+    // If no cart, create an empty one or handle as an error
+    // For this implementation, let's assume a cart should exist or be creatable
+    return getOrCreateCart(userId); // Or simply return null if cart must exist
   }
 
-  recalculateTotal();
-  return dummyCart;
+  cart.items = [];
+  // cart.totalAmount will be updated by the pre-save hook
+  await cart.save();
+  return Cart.findById(cart._id).populate(
+    'items.product',
+    'name price description imageUrl'
+  ); // Return the cart, now empty but with populated product schema info
 };
 
-export const clearCart = async (userId: string): Promise<any> => {
-  console.log('DUMMY_SERVICE: Clearing cart.');
-  dummyCart.items = [];
-  dummyCart.totalAmount = 0;
-  return dummyCart;
-};

@@ -20,8 +20,8 @@ router.get('/', getUserCartHandler);
 // Expects { productId: string, quantity: number } in the body
 router.post('/items', addItemToCartHandler);
 
-// DELETE /api/v1/cart/items/:productId - Remove one unit of an item from the cart
-router.delete('/items/:productId', removeItemFromCartHandler);
+// DELETE /api/v1/cart/items/:mealId - Remove one unit of an item from the cart
+router.delete('/items/:mealId', removeItemFromCartHandler);
 
 // DELETE /api/v1/cart - Clear all items from the cart
 router.delete('/', clearCartHandler);

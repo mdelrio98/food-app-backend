@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 
 export interface OrderItemPayload {
-  productId: Types.ObjectId;
+  mealId: Types.ObjectId;
   quantity: number;
 }
 

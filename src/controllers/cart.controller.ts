@@ -1,19 +1,14 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
+import { AuthenticatedRequest } from '../middlewares/auth.middleware';
+import { transformResponse } from '../utils/responseTransformer';
 import {
   getOrCreateCart,
   addItemToCart,
   removeItemFromCart,
   clearCart,
 } from '../services/cart.service';
-import { Types } from 'mongoose';
 
-// Extend Express Request type to include 'user' property if not already present
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string; // Assuming user ID is a string (e.g., MongoDB ObjectId string)
-    // Add other user properties if needed
-  };
-}
+
 
 export const getUserCartHandler = async (
   req: AuthenticatedRequest,
@@ -21,12 +16,12 @@ export const getUserCartHandler = async (
   next: NextFunction
 ) => {
   try {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !req.user._id) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
-    const userId = req.user.id;
+    const userId = req.user._id;
     const cart = await getOrCreateCart(userId);
-    res.status(200).json(cart);
+    res.status(200).json(transformResponse(cart));
   } catch (error) {
     next(error);
   }
@@ -38,20 +33,20 @@ export const addItemToCartHandler = async (
   next: NextFunction
 ) => {
   try {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !req.user._id) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
-    const userId = req.user.id;
-    const { productId, quantity } = req.body;
+    const userId = req.user._id;
+    const { mealId, quantity } = req.body;
 
-    if (!productId || !quantity) {
+    if (!mealId || !quantity) {
       return res
         .status(400)
-        .json({ message: 'Product ID and quantity are required' });
+        .json({ message: 'Meal ID and quantity are required' });
     }
 
-    // if (!Types.ObjectId.isValid(productId)) { // <-- DISABLED FOR DUMMY DATA
-    //   return res.status(400).json({ message: 'Invalid Product ID format' });
+    // if (!Types.ObjectId.isValid(mealId)) { // <-- DISABLED FOR DUMMY DATA
+    //   return res.status(400).json({ message: 'Invalid Meal ID format' });
     // }
     if (typeof quantity !== 'number' || quantity <= 0) {
       return res
@@ -59,8 +54,8 @@ export const addItemToCartHandler = async (
         .json({ message: 'Quantity must be a positive number' });
     }
 
-    const cart = await addItemToCart(userId, productId, quantity);
-    res.status(200).json(cart);
+    const cart = await addItemToCart(userId, mealId, quantity);
+    res.status(200).json(transformResponse(cart));
   } catch (error) {
     next(error);
   }
@@ -72,21 +67,21 @@ export const removeItemFromCartHandler = async (
   next: NextFunction
 ) => {
   try {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !req.user._id) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
-    const userId = req.user.id;
-    const { productId } = req.params;
+    const userId = req.user._id;
+    const { mealId } = req.params;
 
-    if (!productId) {
-      return res.status(400).json({ message: 'Product ID is required' });
+    if (!mealId) {
+      return res.status(400).json({ message: 'Meal ID is required' });
     }
-    // if (!Types.ObjectId.isValid(productId)) { // <-- DISABLED FOR DUMMY DATA
-    //   return res.status(400).json({ message: 'Invalid Product ID format' });
+    // if (!Types.ObjectId.isValid(mealId)) { // <-- DISABLED FOR DUMMY DATA
+    //   return res.status(400).json({ message: 'Invalid Meal ID format' });
     // }
 
-    const cart = await removeItemFromCart(userId, productId);
-    res.status(200).json(cart);
+    const cart = await removeItemFromCart(userId, mealId);
+    res.status(200).json(transformResponse(cart));
   } catch (error) {
     next(error);
   }
@@ -98,12 +93,12 @@ export const clearCartHandler = async (
   next: NextFunction
 ) => {
   try {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !req.user._id) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
-    const userId = req.user.id;
+    const userId = req.user._id;
     const cart = await clearCart(userId);
-    res.status(200).json(cart);
+    res.status(200).json(transformResponse(cart));
   } catch (error) {
     next(error);
   }

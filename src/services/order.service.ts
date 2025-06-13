@@ -1,8 +1,8 @@
 import { Types } from 'mongoose';
 import OrderModel, { Order, OrderItem } from '../models/Order';
-import ProductModel from '../models/Product';
+import Meal from '../models/Meal';
 import { CreateOrderPayload } from '../types/order.types';
-import { IProduct } from '../types/product.types';
+import { IMeal } from '../types/meal.types';
 import { AppError } from '../utils/AppError';
 
 export const createOrder = async (
@@ -15,26 +15,26 @@ export const createOrder = async (
     throw new AppError('Order must have at least one item', 400);
   }
 
-  const productIds = items.map((item) => item.productId);
-  const products = await ProductModel.find({ _id: { $in: productIds } });
+  const mealIds = items.map((item) => item.mealId);
+  const meals = await Meal.find({ _id: { $in: mealIds } });
 
-  if (products.length !== productIds.length) {
-    throw new AppError('One or more products not found', 404);
+  if (meals.length !== mealIds.length) {
+    throw new AppError('One or more meals not found', 404);
   }
 
   let total = 0;
   const orderItems: OrderItem[] = items.map((item) => {
-        const product = products.find((p: IProduct) => p._id.equals(item.productId));
-    if (!product) {
+        const meal = meals.find((m: IMeal) => m._id.equals(item.mealId));
+    if (!meal) {
       // This case should theoretically not be reached due to the check above
-      throw new AppError(`Product with id ${item.productId} not found`, 404);
+      throw new AppError(`Meal with id ${item.mealId} not found`, 404);
     }
 
-    const price = product.price;
+    const price = meal.price;
     total += price * item.quantity;
 
     return {
-      product: product._id,
+      product: meal._id, // Assuming OrderItem uses 'product' field, will verify
       quantity: item.quantity,
       price: price,
     };

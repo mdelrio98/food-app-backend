@@ -1,9 +1,9 @@
 import { Document } from 'mongoose';
 
-export interface IProduct extends Document {
+export interface IMeal extends Document {
   name: string;
   price: number;
   description?: string;
   imageUrl?: string;
-  // Add other product-specific fields here
+  // Add other meal-specific fields here
 }

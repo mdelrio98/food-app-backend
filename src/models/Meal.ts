@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
-import { IProduct } from '../types/product.types';
+import { IMeal } from '../types/meal.types';
 
-const ProductSchema = new Schema<IProduct>(
+const MealSchema = new Schema<IMeal>(
   {
     name: {
       type: String,
@@ -21,11 +21,11 @@ const ProductSchema = new Schema<IProduct>(
       type: String,
       trim: true,
     },
-    // Define other product fields here
+    // Define other meal fields here
   },
   { timestamps: true } // Adds createdAt and updatedAt timestamps
 );
 
-const Product = model<IProduct>('Product', ProductSchema);
+const Meal = model<IMeal>('Meal', MealSchema);
 
-export default Product;
+export default Meal;
