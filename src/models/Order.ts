@@ -3,7 +3,7 @@ import { IMeal } from '../types/meal.types';
 import { IUser } from '../types/user.types';
 
 export interface OrderItem {
-  product: Types.ObjectId | IMeal;
+  meal: Types.ObjectId | IMeal;
   quantity: number;
   price: number;
 }
@@ -19,9 +19,9 @@ export interface Order extends Document {
 
 const orderItemSchema = new Schema<OrderItem>(
   {
-    product: {
+    meal: {
       type: Schema.Types.ObjectId,
-      ref: 'Product',
+      ref: 'Meal',
       required: true,
     },
     quantity: {

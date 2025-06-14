@@ -3,7 +3,7 @@ import { IMeal } from './meal.types';
 
 // Interface for an item within the cart
 export interface ICartItem {
-  product: Types.ObjectId | IMeal; // Can be populated or just an ID
+  meal: Types.ObjectId | IMeal; // Can be populated or just an ID
   quantity: number;
   price: number; // Price of the product at the time of adding to cart (snapshot)
 }

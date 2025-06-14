@@ -34,7 +34,7 @@ export const createOrder = async (
     total += price * item.quantity;
 
     return {
-      product: meal._id, // Assuming OrderItem uses 'product' field, will verify
+      meal: meal._id, // OrderItem uses 'meal' field
       quantity: item.quantity,
       price: price,
     };

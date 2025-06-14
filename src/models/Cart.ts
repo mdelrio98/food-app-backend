@@ -4,7 +4,7 @@ import { IMeal } from '../types/meal.types';
 
 const CartItemSchema = new Schema<ICartItem>(
   {
-    product: {
+    meal: {
       type: Schema.Types.ObjectId,
       ref: 'Meal',
       required: true,

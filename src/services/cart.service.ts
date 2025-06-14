@@ -11,7 +11,7 @@ import { ICart } from '../types/cart.types'; // Assuming you have this type
  */
 export const getOrCreateCart = async (userId: string): Promise<ICart | null> => {
   let cart = await Cart.findOne({ user: new Types.ObjectId(userId) }).populate(
-    'items.product',
+    'items.meal',
     'name price description imageUrl' // Select fields to populate
   );
 
@@ -46,7 +46,7 @@ export const addItemToCart = async (
   }
 
   const itemIndex = cart.items.findIndex(
-    (item) => item.product.toString() === mealId
+    (item) => item.meal.toString() === mealId
   );
 
   if (itemIndex > -1) {
@@ -55,7 +55,7 @@ export const addItemToCart = async (
   } else {
     // Item does not exist in cart, add new item
     cart.items.push({
-      product: new Types.ObjectId(mealId),
+      meal: new Types.ObjectId(mealId),
       quantity,
       price: product.price, // Store price at the time of adding
     });
@@ -63,7 +63,7 @@ export const addItemToCart = async (
 
   await cart.save(); // Mongoose pre-save hook will calculate totalAmount
   return Cart.findById(cart._id).populate(
-    'items.product',
+    'items.meal',
     'name price description imageUrl'
   );
 };
@@ -85,7 +85,7 @@ export const removeItemFromCart = async (
   }
 
   const itemIndex = cart.items.findIndex(
-    (item) => item.product.toString() === mealId
+    (item) => item.meal.toString() === mealId
   );
 
   if (itemIndex > -1) {
@@ -96,7 +96,7 @@ export const removeItemFromCart = async (
     }
     await cart.save();
     return Cart.findById(cart._id).populate(
-      'items.product',
+      'items.meal',
       'name price description imageUrl'
     );
   } else {
@@ -104,7 +104,7 @@ export const removeItemFromCart = async (
     // For consistency, let's return the cart as is, or throw an error if preferred.
     // throw new Error('Item not found in cart');
     return Cart.findById(cart._id).populate(
-      'items.product',
+      'items.meal',
       'name price description imageUrl'
     ); 
   }
@@ -128,7 +128,7 @@ export const clearCart = async (userId: string): Promise<ICart | null> => {
   // cart.totalAmount will be updated by the pre-save hook
   await cart.save();
   return Cart.findById(cart._id).populate(
-    'items.product',
+    'items.meal',
     'name price description imageUrl'
   ); // Return the cart, now empty but with populated product schema info
 };

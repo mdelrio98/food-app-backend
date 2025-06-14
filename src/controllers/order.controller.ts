@@ -4,6 +4,7 @@ import * as OrderService from '../services/order.service';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { handleAsync } from '../utils/handleAsync';
 import { AppError } from '../utils/AppError';
+import { transformResponse } from '../utils/responseTransformer';
 
 export const createOrderHandler = handleAsync(
   async (req: AuthenticatedRequest, res: Response) => {
@@ -17,7 +18,7 @@ export const createOrderHandler = handleAsync(
 
     res.status(201).json({
       message: 'Order created successfully',
-      data: order,
+      data: transformResponse(order),
     });
   }
 );

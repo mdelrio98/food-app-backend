@@ -61,7 +61,11 @@ export const transformResponse = (data: any): any => {
       const result: { [key: string]: any } = {};
       for (const key in transformedData) {
         if (Object.prototype.hasOwnProperty.call(transformedData, key)) {
-          result[key] = transformResponse(transformedData[key]);
+          if (transformedData[key] instanceof Types.ObjectId) {
+            result[key] = transformedData[key].toString();
+          } else {
+            result[key] = transformResponse(transformedData[key]);
+          }
         }
       }
       return result;
