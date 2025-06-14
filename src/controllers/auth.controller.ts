@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import User, { IUserDocument } from '../models/User';
 import { generateToken } from '../utils/jwt';
+import { transformResponse } from '../utils/responseTransformer';
 
 /**
  * @desc    Register a new user
@@ -35,11 +36,12 @@ export const register = async (req: Request, res: Response) => {
     // Generate token
     const token = generateToken(user._id.toString());
 
-    // Respond with user data and token (excluding password)
+    // Transform user object for response
+    const userResponse = transformResponse(user);
+
+    // Respond with user data and token
     res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
+      ...userResponse,
       token,
     });
   } catch (error: any) {
@@ -74,11 +76,12 @@ export const login = async (req: Request, res: Response) => {
     // Generate token
     const token = generateToken(user._id.toString());
 
-    // Respond with user data and token (excluding password)
+    // Transform user object for response (password will be excluded by schema's toJSON)
+    const userResponse = transformResponse(user);
+
+    // Respond with user data and token
     res.status(200).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
+      ...userResponse,
       token,
     });
   } catch (error: any) {
