@@ -2,14 +2,15 @@ import Cart from '../models/Cart';
 import Meal from '../models/Meal';
 import { Types } from 'mongoose';
 import { ICart } from '../types/cart.types'; // Assuming you have this type
+import { ApiError } from '../utils/ApiError';
 
 /**
- * Retrieves an existing cart for a user or creates a new one if it doesn't exist.
+ * Initializes a user's cart. It retrieves an existing cart or creates a new one if it doesn't exist.
  * Populates product details for items in the cart.
  * @param userId - The ID of the user.
  * @returns The user's cart.
  */
-export const getOrCreateCart = async (userId: string): Promise<ICart | null> => {
+export const initializeCart = async (userId: string): Promise<ICart | null> => {
   let cart = await Cart.findOne({ user: new Types.ObjectId(userId) }).populate(
     'items.meal',
     'name price description imageUrl' // Select fields to populate
@@ -36,7 +37,7 @@ export const addItemToCart = async (
 ): Promise<ICart | null> => {
   const product = await Meal.findById(mealId);
   if (!product) {
-    throw new Error('Product not found');
+    throw new ApiError('Product not found', 404);
   }
 
   let cart = await Cart.findOne({ user: new Types.ObjectId(userId) });
@@ -81,33 +82,34 @@ export const removeItemFromCart = async (
   const cart = await Cart.findOne({ user: new Types.ObjectId(userId) });
 
   if (!cart) {
-    throw new Error('Cart not found');
+    // This case should ideally not be hit if initializeCart is always called first,
+    // but as a safeguard, we throw a 404.
+    throw new ApiError('Cart not found', 404);
   }
 
-  const itemIndex = cart.items.findIndex(
+    const itemIndex = cart.items.findIndex(
     (item) => item.meal.toString() === mealId
   );
 
-  if (itemIndex > -1) {
-    if (cart.items[itemIndex].quantity > 1) {
-      cart.items[itemIndex].quantity -= 1;
-    } else {
-      cart.items.splice(itemIndex, 1);
-    }
-    await cart.save();
-    return Cart.findById(cart._id).populate(
-      'items.meal',
-      'name price description imageUrl'
-    );
-  } else {
-    // Item not in cart, return current cart or throw error
-    // For consistency, let's return the cart as is, or throw an error if preferred.
-    // throw new Error('Item not found in cart');
-    return Cart.findById(cart._id).populate(
-      'items.meal',
-      'name price description imageUrl'
-    ); 
+  // Guard clause: If the item is not in the cart, throw a 404 error.
+  if (itemIndex === -1) {
+    throw new ApiError('Item not found in cart', 404);
   }
+
+  // If the item exists, decrease its quantity or remove it from the cart.
+  if (cart.items[itemIndex].quantity > 1) {
+    cart.items[itemIndex].quantity -= 1;
+  } else {
+    cart.items.splice(itemIndex, 1);
+  }
+
+  await cart.save();
+
+  // Return the updated cart with populated items.
+  return Cart.findById(cart._id).populate(
+    'items.meal',
+    'name price description imageUrl'
+  );
 };
 
 /**
@@ -121,7 +123,7 @@ export const clearCart = async (userId: string): Promise<ICart | null> => {
   if (!cart) {
     // If no cart, create an empty one or handle as an error
     // For this implementation, let's assume a cart should exist or be creatable
-    return getOrCreateCart(userId); // Or simply return null if cart must exist
+    return initializeCart(userId); // Or simply return null if cart must exist
   }
 
   cart.items = [];

@@ -3,7 +3,7 @@ import OrderModel, { Order, OrderItem } from '../models/Order';
 import Meal from '../models/Meal';
 import { CreateOrderPayload } from '../types/order.types';
 import { IMeal } from '../types/meal.types';
-import { AppError } from '../utils/AppError';
+import { ApiError } from '../utils/ApiError';
 
 export const createOrder = async (
   userId: Types.ObjectId,
@@ -12,29 +12,32 @@ export const createOrder = async (
   const { items } = payload;
 
   if (!items || items.length === 0) {
-    throw new AppError('Order must have at least one item', 400);
+    throw new ApiError('Order must have at least one item', 400);
   }
 
-  const mealIds = items.map((item) => item.mealId);
-  const meals = await Meal.find({ _id: { $in: mealIds } });
+  // Get unique meal IDs from the payload to perform a robust validation.
+  const uniqueMealIds = [...new Set(items.map((item) => item.mealId))];
+  const meals = await Meal.find({ _id: { $in: uniqueMealIds } });
 
-  if (meals.length !== mealIds.length) {
-    throw new AppError('One or more meals not found', 404);
+  // Validate that every unique meal ID from the payload corresponds to a meal in the database.
+  if (meals.length !== uniqueMealIds.length) {
+    throw new ApiError('One or more meals specified in the order do not exist.', 404);
   }
+
+  // Create a Map of meals for efficient lookup, avoiding a nested loop.
+  const mealMap = new Map(meals.map((meal) => [meal._id.toString(), meal]));
 
   let total = 0;
   const orderItems: OrderItem[] = items.map((item) => {
-        const meal = meals.find((m: IMeal) => m._id.equals(item.mealId));
-    if (!meal) {
-      // This case should theoretically not be reached due to the check above
-      throw new AppError(`Meal with id ${item.mealId} not found`, 404);
-    }
+    // We can safely assume the meal exists due to the prior validation.
+    // The non-null assertion (!) is safe to use here.
+    const meal = mealMap.get(item.mealId.toString())!;
 
     const price = meal.price;
     total += price * item.quantity;
 
     return {
-      meal: meal._id, // OrderItem uses 'meal' field
+      meal: meal._id,
       quantity: item.quantity,
       price: price,
     };

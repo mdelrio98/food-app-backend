@@ -8,6 +8,7 @@ import cartRoutes from './routes/cart.routes';
 import mealRoutes from './routes/meal.routes'; // Import meal routes
 import orderRoutes from './routes/order.routes';
 import authRoutes from './routes/auth.routes';
+import errorHandler from './middlewares/error.middleware';
 
 // Load environment variables
 dotenv.config();
@@ -43,11 +44,8 @@ app.use(`${API_PREFIX}/*`, (req: Request, res: Response) => {
   res.status(404).json({ message: 'API route not found' });
 });
 
-// Global error handler
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!', error: err.message });
-});
+// Global error handler - MUST be the last middleware
+app.use(errorHandler);
 
 app.listen(PORT, LISTEN_HOST, () => {
   console.log(`Server listening on host ${LISTEN_HOST} and port ${PORT}`);

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { transformResponse } from '../utils/responseTransformer';
+import { ApiError } from '../utils/ApiError';
 import Meal from '../models/Meal';
 import { IMeal } from '../types/meal.types';
 import { Types } from 'mongoose';
@@ -15,11 +16,13 @@ export const createMealHandler = async (
   try {
     const { name, price, description, imageUrl } = req.body;
 
-    if (!name || price === undefined) {
-      return res.status(400).json({ message: 'Name and price are required' });
+        // Validate input: name must be a non-empty string, and price must be a non-negative number.
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      return next(new ApiError('Name is required and cannot be empty', 400));
     }
-    if (typeof price !== 'number' || price < 0) {
-      return res.status(400).json({ message: 'Price must be a non-negative number' });
+
+    if (price === undefined || typeof price !== 'number' || price < 0) {
+      return next(new ApiError('Price must be a non-negative number', 400));
     }
 
     const mealData: Partial<IMeal> = { name, price, description, imageUrl };
@@ -79,28 +82,32 @@ export const updateMealHandler = async (
   res: Response,
   next: NextFunction
 ) => {
-  try {
+    try {
     const { mealId } = req.params;
     if (!Types.ObjectId.isValid(mealId)) {
-      return res.status(400).json({ message: 'Invalid Meal ID format' });
+      return next(new ApiError('Invalid Meal ID format', 400));
     }
 
     const meal = await Meal.findById(mealId);
     if (!meal) {
-      return res.status(404).json({ message: 'Meal not found' });
+      return next(new ApiError('Meal not found', 404));
     }
 
     const { name, price, description, imageUrl } = req.body;
 
-    // Basic validation for price if provided
+    // Validate incoming data only if it was provided in the request
+    if (name !== undefined && (typeof name !== 'string' || name.trim() === '')) {
+      return next(new ApiError('Name, if provided, cannot be an empty string', 400));
+    }
     if (price !== undefined && (typeof price !== 'number' || price < 0)) {
-      return res.status(400).json({ message: 'Price must be a non-negative number' });
+      return next(new ApiError('Price, if provided, must be a non-negative number', 400));
     }
 
-    meal.name = name || meal.name;
-    meal.price = price === undefined ? meal.price : price;
-    meal.description = description === undefined ? meal.description : description;
-    meal.imageUrl = imageUrl === undefined ? meal.imageUrl : imageUrl;
+    // Apply updates only for the fields that were actually provided in the request body
+    if (name !== undefined) meal.name = name;
+    if (price !== undefined) meal.price = price;
+    if (description !== undefined) meal.description = description;
+    if (imageUrl !== undefined) meal.imageUrl = imageUrl;
 
     const updatedMeal = await meal.save();
     res.status(200).json(transformResponse(updatedMeal));

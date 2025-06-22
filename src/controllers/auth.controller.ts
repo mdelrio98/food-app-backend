@@ -23,7 +23,7 @@ export const register = async (req: Request, res: Response) => {
     // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(409).json({ message: 'User with this email already exists.' });
+      return res.status(409).json({ message: 'User already exists.' });
     }
 
     // Create new user
@@ -47,7 +47,7 @@ export const register = async (req: Request, res: Response) => {
   } catch (error: any) {
     // Log the full error for better diagnostics
     console.error('Error during registration:', error);
-    res.status(500).json({ message: 'Server error during registration.', error: error.message });
+    res.status(500).json({ message: 'Error during registration.', error: error.message });
   }
 };
 

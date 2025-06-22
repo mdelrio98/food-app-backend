@@ -1,26 +1,21 @@
-import { Response, NextFunction } from 'express';
-import { AuthenticatedRequest } from '../middlewares/auth.middleware';
+import { Request, Response, NextFunction } from 'express';
 import { transformResponse } from '../utils/responseTransformer';
+import { ApiError } from '../utils/ApiError';
 import {
-  getOrCreateCart,
+  initializeCart,
   addItemToCart,
   removeItemFromCart,
   clearCart,
 } from '../services/cart.service';
 
-
-
 export const getUserCartHandler = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    if (!req.user || !req.user._id) {
-      return res.status(401).json({ message: 'User not authenticated' });
-    }
-    const userId = req.user._id;
-    const cart = await getOrCreateCart(userId);
+    const userId = req.user!.id; // Use non-null assertion as 'protect' middleware guarantees user
+    const cart = await initializeCart(userId);
     res.status(200).json(transformResponse(cart));
   } catch (error) {
     next(error);
@@ -28,30 +23,23 @@ export const getUserCartHandler = async (
 };
 
 export const addItemToCartHandler = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    if (!req.user || !req.user._id) {
-      return res.status(401).json({ message: 'User not authenticated' });
-    }
-    const userId = req.user._id;
+    const userId = req.user!.id; // Use non-null assertion as 'protect' middleware guarantees user
     const { mealId, quantity } = req.body;
 
     if (!mealId || !quantity) {
-      return res
-        .status(400)
-        .json({ message: 'Meal ID and quantity are required' });
+      throw new ApiError('Meal ID and quantity are required', 400);
     }
 
     // if (!Types.ObjectId.isValid(mealId)) { // <-- DISABLED FOR DUMMY DATA
     //   return res.status(400).json({ message: 'Invalid Meal ID format' });
     // }
     if (typeof quantity !== 'number' || quantity <= 0) {
-      return res
-        .status(400)
-        .json({ message: 'Quantity must be a positive number' });
+      throw new ApiError('Quantity must be a positive number', 400);
     }
 
     const cart = await addItemToCart(userId, mealId, quantity);
@@ -62,19 +50,16 @@ export const addItemToCartHandler = async (
 };
 
 export const removeItemFromCartHandler = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    if (!req.user || !req.user._id) {
-      return res.status(401).json({ message: 'User not authenticated' });
-    }
-    const userId = req.user._id;
+    const userId = req.user!.id; // Use non-null assertion as 'protect' middleware guarantees user
     const { mealId } = req.params;
 
     if (!mealId) {
-      return res.status(400).json({ message: 'Meal ID is required' });
+      throw new ApiError('Meal ID is required', 400);
     }
     // if (!Types.ObjectId.isValid(mealId)) { // <-- DISABLED FOR DUMMY DATA
     //   return res.status(400).json({ message: 'Invalid Meal ID format' });
@@ -88,15 +73,12 @@ export const removeItemFromCartHandler = async (
 };
 
 export const clearCartHandler = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    if (!req.user || !req.user._id) {
-      return res.status(401).json({ message: 'User not authenticated' });
-    }
-    const userId = req.user._id;
+    const userId = req.user!.id; // Use non-null assertion as 'protect' middleware guarantees user
     const cart = await clearCart(userId);
     res.status(200).json(transformResponse(cart));
   } catch (error) {

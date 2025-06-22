@@ -1,12 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
-import { IAuthenticatedUser } from '../types/user.types';
-
-// Extend Express Request type to include 'user' property
-export interface AuthenticatedRequest extends Request {
-  user?: IAuthenticatedUser;
-}
 
 interface DecodedToken {
   id: string;
@@ -15,9 +9,10 @@ interface DecodedToken {
 /**
  * Authentication Middleware.
  * Verifies a JWT token, finds the user in the database, and attaches the user to the request.
+ * It leverages declaration merging to add the 'user' property to the Express Request type.
  */
 export const protect = async (
-  req: AuthenticatedRequest,
+  req: Request, 
   res: Response,
   next: NextFunction
 ) => {
@@ -32,20 +27,28 @@ export const protect = async (
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
 
       // Get user from the token
-      req.user = (await User.findById(decoded.id).select('-password')) as IAuthenticatedUser | undefined;
+      const user = await User.findById(decoded.id).select('-password');
 
-      if (!req.user) {
-        return res.status(401).json({ message: 'Not authorized, user not found' });
+      if (!user) {
+        return res.status(401).json({ message: 'Unauthorized Access' });
       }
+
+      // Attach the authenticated user to the request object
+      req.user = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      };
 
       next();
     } catch (error) {
       console.error('Token verification failed:', error);
-      return res.status(401).json({ message: 'Not authorized, token failed' });
+      return res.status(401).json({ message: 'Unauthorized Access' });
     }
   }
 
   if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token' });
+    return res.status(401).json({ message: 'Unauthorized Access' });
   }
 };

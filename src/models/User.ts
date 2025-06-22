@@ -1,12 +1,6 @@
 import { Schema, model, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
-
-// Interface describing the properties for creating a new User
-export interface IUser {
-  name: string;
-  email: string;
-  password: string;
-}
+import { IUser, UserRole } from '../types/user.types';
 
 // Interface describing the User document returned by Mongoose (includes methods)
 export interface IUserDocument extends IUser, Document {
@@ -34,6 +28,12 @@ const UserSchema = new Schema<IUserDocument>(
       minlength: [6, 'Password must be at least 6 characters long'],
       select: false, // Do not return password on queries by default
     },
+    role: {
+      type: String,
+      enum: Object.values(UserRole),
+      default: UserRole.USER,
+      required: true,
+    },
   },
   { timestamps: true }
 );
@@ -41,7 +41,9 @@ const UserSchema = new Schema<IUserDocument>(
 // Pre-save middleware to hash password
 UserSchema.pre<IUserDocument>('save', async function (next) {
   // Only hash the password if it has been modified (or is new)
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) {
+    return next();
+  }
 
   // Hash the password with a salt round of 12
   const salt = await bcrypt.genSalt(12);
