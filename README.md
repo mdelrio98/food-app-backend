@@ -29,14 +29,15 @@ This is the backend for the "Food App" application. It's built with Node.js, Exp
 
 ## ✨ Features
 
+- **Interactive API Documentation:** Live API documentation powered by Swagger (OpenAPI) for easy endpoint visualization and testing.
 - **Modern Stack:** TypeScript for robust, maintainable, and scalable code.
 - **NoSQL Database:** MongoDB with Mongoose for flexible data management and schema modeling.
 - **RESTful API:** Well-defined endpoints following REST conventions for CRUD operations and other business logic.
+- **JWT Authentication:** Secure endpoints using JSON Web Tokens.
 - **Organized Structure:** Business logic separated into services, controllers, and models, promoting the single responsibility principle.
-- **Basic Security:** Essential middlewares like Helmet for security headers and CORS for Cross-Origin Resource Sharing management.
-- **Response Transformation:** A utility (`src/utils/responseTransformer.ts`) to standardize API responses, converting `_id` to `id` and removing internal Mongoose fields, simplifying frontend integration.
-- **Error Handling:** Middlewares for error catching and handling. (Can be detailed further if a centralized one exists).
-- **Logging:** Logging setup for tracking requests and errors (morgan).
+- **Response Transformation:** A utility (`src/utils/responseTransformer.ts`) to standardize API responses, simplifying frontend integration.
+- **Error Handling:** Centralized error-handling middleware.
+- **Logging:** HTTP request logging with `morgan`.
 
 ---
 
@@ -45,11 +46,13 @@ This is the backend for the "Food App" application. It's built with Node.js, Exp
 - **Backend Framework:** Node.js, Express.js
 - **Language:** TypeScript
 - **Database:** MongoDB (ORM/ODM: Mongoose)
-- **Dependency Management:** npm
+- **API Documentation:** `swagger-jsdoc`, `swagger-ui-express`
+- **Authentication:** `jsonwebtoken`, `bcryptjs`
+- **Dependency Management:** `yarn`
 - **Environment Variables:** `dotenv`
 - **HTTP Request Logging:** `morgan`
 - **Security:** `helmet`, `cors`
-- **Development Tools:** `ts-node-dev` (for hot-reloading), `nodemon`
+- **Development Tools:** `ts-node-dev` (for hot-reloading)
 - **TypeScript Compiler:** `typescript`
 
 ---
@@ -106,7 +109,7 @@ cd food-app-backend
 Navigate to the project's root directory and install the dependencies:
 
 ```bash
-npm install
+yarn install
 ```
 
 ### 4. Configure Environment Variables
@@ -141,18 +144,18 @@ Make sure your MongoDB instance is running and accessible.
 To start the server in development mode (with hot-reloading thanks to `ts-node-dev`):
 
 ```bash
-npm run dev
+yarn dev
 ```
 
 The server will be available at `http://localhost:3001` (or the port you configured in `.env`). You will see logs in the console indicating that the server has started and connected to the database.
 
 To compile the project for production:
 ```bash
-npm run build
+yarn build
 ```
-And to start in production mode (using the compiled code in `dist/`):
+And to run the compiled code:
 ```bash
-npm start
+yarn start
 ```
 
 ---
@@ -161,12 +164,12 @@ npm start
 
 In the `package.json` file, you will find the following main scripts:
 
-- `npm run dev`: Starts the server in development mode using `ts-node-dev`. Ideal for local development due to its hot-reloading feature.
-- `npm run build`: Compiles the TypeScript code to JavaScript in the `dist/` directory.
-- `npm start`: Starts the server in production mode from the compiled files in `dist/`. Requires `npm run build` to have been run beforehand.
-- `npm test`: (Placeholder) Runs automated tests (see [Testing](#-testing) section).
-- `npm run lint`: (Placeholder) Runs the linter to check code quality.
-- `npm run format`: (Placeholder) Formats the code using Prettier.
+- `yarn dev`: Starts the server in development mode using `ts-node-dev`. Ideal for local development due to its hot-reloading feature.
+- `yarn build`: Compiles the TypeScript code to JavaScript in the `dist/` directory.
+- `yarn start`: Runs the compiled code in production mode.
+- `yarn test`: (Placeholder) Runs automated tests (see [Testing](#-testing) section).
+- `yarn run lint`: (Placeholder) Runs the linter to check code quality.
+- `yarn run format`: (Placeholder) Formats the code using Prettier.
 
 ---
 
@@ -180,26 +183,17 @@ In the `package.json` file, you will find the following main scripts:
 
 ## 📄 API Documentation
 
-The base prefix for all endpoints is `/api/v1` (configurable in `.env` via `API_PREFIX`).
+This project uses Swagger to provide live, interactive API documentation. You can use this interface to view all available endpoints, see their parameters and schemas, and test them directly from your browser.
 
-### Health Check
+**How to access:**
 
-| Method | Endpoint  | Description                       |
-|--------|-----------|-----------------------------------|
-| `GET`  | `/health` | Checks the server's health status. |
+1.  Ensure the development server is running:
+    ```bash
+    yarn dev
+    ```
 
-### Shopping Cart
-
-**Note:** All cart routes require authentication. A placeholder middleware is currently used to simulate an authenticated user.
-
-| Method   | Endpoint                  | Description                                                                                             |
-|----------|---------------------------|---------------------------------------------------------------------------------------------------------|
-| `GET`    | `/cart`                   | Gets the current user's shopping cart. If it doesn't exist, a new one is created.                         |
-| `POST`   | `/cart/items`             | Adds a product to the cart. If the product already exists, its quantity is incremented. **Body:** `{ "productId": "...", "quantity": 1 }` |
-| `DELETE` | `/cart/items/:productId`  | Decrements a product's quantity in the cart by one. If the quantity reaches zero, the item is removed.     |
-| `DELETE` | `/cart`                   | Completely empties the user's shopping cart.                                                  |
-
-*(It is recommended to expand this section with all available endpoints, including Products, Users, Authentication, etc. Consider using tools like Swagger/OpenAPI to generate interactive documentation).*
+2.  Open your browser and navigate to:
+    [**http://localhost:3001/api-docs**](http://localhost:3001/api-docs) (OpenAPI)
 
 ---
 
@@ -262,7 +256,7 @@ This project has a solid foundation, but there is always room to grow and improv
 - **Authorization and Roles:** Add a role-based access control (RBAC) system.
 - **Advanced Input Validation:** Use libraries like `zod`, `joi`, or `class-validator` for more detailed and declarative validation of API input data.
 - **Centralized and Detailed Error Handling:** Improve the error-handling middleware to provide more consistent and useful error responses.
-- **API Documentation with Swagger/OpenAPI:** Generate interactive API documentation.
+
 - **Pagination, Filtering, and Sorting:** Implement these features on endpoints that return lists of resources.
 - **Database Query Optimization:** Add indexes in MongoDB, optimize complex queries.
 - **Database Transactions:** For operations that require multiple atomic changes.

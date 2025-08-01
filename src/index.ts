@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import cors from 'cors';
 import connectDB from './config/database';
+import { swaggerUi, swaggerSpec } from './config/swagger';
 import cartRoutes from './routes/cart.routes';
 import mealRoutes from './routes/meal.routes'; // Import meal routes
 import orderRoutes from './routes/order.routes';
@@ -27,6 +28,10 @@ app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Swagger Docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 
 // Mount Routes
 app.use(`${API_PREFIX}/auth`, authRoutes);
